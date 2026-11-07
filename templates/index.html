@@ -1,0 +1,1877 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maize MLND | Disease Incidence Prediction System</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --green: #174d32;
+            --green-dark: #103b27;
+            --green-mid: #32734c;
+            --green-light: #eaf4ed;
+            --gold: #e6b94f;
+            --red: #c7473c;
+            --orange: #d58a28;
+            --text: #1c3026;
+            --muted: #738078;
+            --border: #e5ebe6;
+            --background: #f3f7f3;
+            --white: #ffffff;
+            --shadow: 0 8px 28px rgba(24,59,39,.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family: "DM Sans", Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,.97);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+        }
+
+        .topbar-inner {
+            max-width: 1440px;
+            min-height: 72px;
+            margin: auto;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 220px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            background: var(--green);
+            color: white;
+            font-size: 23px;
+        }
+
+        .brand-name {
+            font-family: Manrope, sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--green-dark);
+        }
+
+        .brand-subtitle {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 21px;
+        }
+
+        .nav-links a {
+            color: #56665c;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .nav-links a:hover { color: var(--green); }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prototype-label {
+            padding: 8px 12px;
+            border-radius: 30px;
+            color: var(--green);
+            background: var(--green-light);
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .action-button {
+            padding: 9px 12px;
+            border: 1px solid #dce5dd;
+            border-radius: 8px;
+            background: white;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .action-button:hover {
+            background: var(--green-light);
+        }
+
+        main {
+            max-width: 1440px;
+            margin: auto;
+            padding: 28px 32px 50px;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 42px 40px;
+            border-radius: 20px;
+            color: white;
+            background: linear-gradient(115deg,#103b27 0%,#1c603b 65%,#34794d 100%);
+            box-shadow: 0 12px 32px rgba(16,59,39,.14);
+        }
+
+        .hero::after {
+            content: "🌽";
+            position: absolute;
+            right: 65px;
+            top: 4px;
+            font-size: 140px;
+            opacity: .13;
+            transform: rotate(-17deg);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 790px;
+        }
+
+        .eyebrow {
+            color: #e8c96f;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            margin: 13px 0;
+            font-family: Manrope, sans-serif;
+            font-size: clamp(27px,3.2vw,42px);
+            line-height: 1.18;
+            letter-spacing: -1px;
+        }
+
+        .hero p {
+            max-width: 700px;
+            margin: 0;
+            color: #dcebe0;
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-top: 23px;
+        }
+
+        .hero-tag {
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 30px;
+            background: rgba(255,255,255,.09);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 15px;
+            margin: 34px 0 16px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            font-family: Manrope, sans-serif;
+            font-size: 21px;
+            letter-spacing: -.4px;
+        }
+
+        .section-heading p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 12px;
+        }
+
+        .section-number {
+            color: #91a096;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            padding: 21px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(24,59,39,.1);
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--green-light);
+            font-size: 18px;
+        }
+
+        .stat-value {
+            margin-top: 13px;
+            color: var(--green-dark);
+            font-family: Manrope, sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .stat-foot {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .panel, .form-panel, .map-panel, .chart-panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel {
+            padding: 25px;
+            margin-bottom: 17px;
+        }
+
+        .panel-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .panel-title h2, .panel-title h3 {
+            margin: 0;
+            font-family: Manrope, sans-serif;
+            font-size: 18px;
+        }
+
+        .panel-description {
+            margin: 7px 0 19px;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 12px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 30px;
+            background: var(--green-light);
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .form-map-grid {
+            display: grid;
+            grid-template-columns: minmax(300px,.85fr) minmax(0,1.5fr);
+            gap: 17px;
+            align-items: stretch;
+        }
+
+        .form-panel { padding: 25px; }
+
+        .form-panel h2 {
+            margin: 0;
+            font-family: Manrope, sans-serif;
+            font-size: 19px;
+        }
+
+        .form-panel > p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+            margin: 8px 0 18px;
+        }
+
+        .field-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: #354a3d;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        input, select {
+            width: 100%;
+            min-height: 45px;
+            padding: 11px 13px;
+            color: var(--text);
+            background: #fbfcfb;
+            border: 1px solid #dce5dd;
+            border-radius: 9px;
+            outline: none;
+            transition: border .2s,box-shadow .2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(50,115,76,.1);
+        }
+
+        input::placeholder {
+            color: #a3aea6;
+            font-size: 12px;
+        }
+
+        .field-hint {
+            margin-top: 5px;
+            color: #87938b;
+            font-size: 10px;
+        }
+
+        .primary-button {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 17px;
+            border: 0;
+            border-radius: 9px;
+            color: white;
+            background: var(--green);
+            font-weight: 800;
+            font-size: 13px;
+            transition: background .2s,transform .2s;
+        }
+
+        .primary-button:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .map-panel {
+            min-width: 0;
+            padding: 22px;
+        }
+
+        #map {
+            width: 100%;
+            height: 440px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            z-index: 1;
+        }
+
+        .map-help {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .secondary-button {
+            padding: 9px 13px;
+            border: 1px solid #dce5dd;
+            border-radius: 8px;
+            color: var(--green);
+            background: white;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .secondary-button:hover { background: var(--green-light); }
+
+        .error {
+            padding: 13px 15px;
+            margin: 0 0 17px;
+            color: #9d2929;
+            background: #fff0ed;
+            border: 1px solid #f4d4cf;
+            border-radius: 9px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .result-panel {
+            position: relative;
+            overflow: hidden;
+            padding: 27px;
+            background: white;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--gold);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 18px;
+        }
+
+        .result-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .result-top h2 {
+            margin: 0;
+            font-family: Manrope, sans-serif;
+            font-size: 20px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 19px;
+        }
+
+        .result-metric {
+            padding: 20px;
+            border-radius: 12px;
+            background: #f6f9f6;
+        }
+
+        .result-metric-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .result-metric-value {
+            margin-top: 7px;
+            color: var(--green-dark);
+            font-family: Manrope, sans-serif;
+            font-size: 31px;
+            font-weight: 800;
+        }
+
+        .risk-high { color: var(--red); }
+        .risk-moderate { color: var(--orange); }
+        .risk-low { color: var(--green-mid); }
+
+        .guidance {
+            margin-top: 14px;
+            padding: 17px;
+            border-radius: 11px;
+            background: #fff6df;
+            color: #665021;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .guidance strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 460px;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 13px 14px;
+            color: #526258;
+            background: #f0f5f0;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 13px 14px;
+            color: #435348;
+            border-bottom: 1px solid #edf0ed;
+            font-size: 12px;
+        }
+
+        tbody tr:hover { background: #fafcf9; }
+
+        .number-cell {
+            font-weight: 800;
+            color: var(--green-dark);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 17px;
+        }
+
+        .chart-panel {
+            min-width: 0;
+            padding: 23px;
+        }
+
+        .chart-panel h3 {
+            margin: 0;
+            font-family: Manrope, sans-serif;
+            font-size: 16px;
+        }
+
+        .chart-panel p {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin-top: 15px;
+        }
+
+        .model-highlight {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 12px;
+            margin: 17px 0 20px;
+        }
+
+        .model-metric {
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: #fbfcfb;
+        }
+
+        .model-metric span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .model-metric strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--green-dark);
+            font-family: Manrope, sans-serif;
+            font-size: 24px;
+        }
+
+        .selected-model {
+            display: inline-flex;
+            padding: 7px 11px;
+            border-radius: 7px;
+            background: var(--green-light);
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .info-item {
+            padding: 14px;
+            background: #f7f9f7;
+            border-radius: 9px;
+        }
+
+        .info-item span {
+            display: block;
+            color: var(--muted);
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .info-item strong {
+            color: var(--green-dark);
+            font-size: 12px;
+        }
+
+        .note {
+            margin-top: 17px;
+            padding: 15px 17px;
+            border: 1px solid #eee2bf;
+            border-radius: 10px;
+            background: #fffaf0;
+            color: #665a3d;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .risk-key {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .key-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .key-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 14px;
+        }
+
+        .about-item {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fbfcfb;
+        }
+
+        .about-icon { font-size: 23px; }
+
+        .about-item h3 {
+            margin: 10px 0 7px;
+            color: var(--green-dark);
+            font-size: 13px;
+        }
+
+        .about-item p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        footer {
+            margin-top: 35px;
+            padding: 27px;
+            text-align: center;
+            color: #d8e6dc;
+            background: var(--green-dark);
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        footer strong {
+            color: white;
+            font-size: 14px;
+        }
+
+        .leaflet-popup-content {
+            font-family: "DM Sans",Arial,sans-serif;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .back-to-top {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 900;
+            width: 43px;
+            height: 43px;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            background: var(--green);
+            box-shadow: 0 5px 18px rgba(0,0,0,.18);
+            font-size: 19px;
+            display: none;
+        }
+
+        .back-to-top.visible { display: block; }
+
+        /* PRESENTATION MODE */
+        body.presentation-mode {
+            background: #ffffff;
+        }
+
+        body.presentation-mode .topbar {
+            position: relative;
+        }
+
+        body.presentation-mode .nav-links,
+        body.presentation-mode .prototype-label,
+        body.presentation-mode .back-to-top {
+            display: none !important;
+        }
+
+        /* Keep the exit button visible in presentation mode */
+        body.presentation-mode .top-actions {
+            display: flex !important;
+        }
+
+        body.presentation-mode #printButton {
+            display: none !important;
+        }
+
+        body.presentation-mode main {
+            max-width: 1500px;
+            padding-top: 22px;
+        }
+
+        body.presentation-mode .hero {
+            padding: 55px 48px;
+        }
+
+        body.presentation-mode .panel,
+        body.presentation-mode .stat-card,
+        body.presentation-mode .form-panel,
+        body.presentation-mode .map-panel {
+            box-shadow: 0 5px 22px rgba(24,59,39,.08);
+        }
+
+        body.presentation-mode footer {
+            margin-top: 20px;
+        }
+
+        @media print {
+            .topbar, .back-to-top, .action-button,
+            .primary-button, .secondary-button {
+                display: none !important;
+            }
+
+            body, main {
+                background: white !important;
+            }
+
+            main {
+                max-width: 100%;
+                padding: 10px;
+            }
+
+            .panel, .stat-card, .form-panel, .map-panel,
+            .result-panel, .chart-panel {
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+
+            .hero {
+                background: #174d32 !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            footer {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+
+        @media (max-width:1000px) {
+            .topbar-inner { padding: 0 20px; }
+            main { padding: 23px 20px 40px; }
+            .nav-links { gap: 13px; }
+            .form-map-grid, .chart-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width:700px) {
+            .topbar-inner {
+                min-height: 65px;
+                flex-wrap: wrap;
+                padding: 10px 15px;
+            }
+
+            .nav-links {
+                width: 100%;
+                order: 3;
+                overflow-x: auto;
+                padding: 8px 0;
+            }
+
+            .nav-links a { white-space: nowrap; }
+            .brand { min-width: 0; }
+            main { padding: 16px 13px 30px; }
+            .hero { padding: 28px 22px; }
+
+            .hero::after {
+                right: 10px;
+                top: 15px;
+                font-size: 80px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2,1fr);
+                gap: 10px;
+            }
+
+            .stat-card { padding: 15px; }
+            .stat-value { font-size: 22px; }
+
+            .panel, .form-panel, .map-panel, .chart-panel {
+                padding: 17px;
+            }
+
+            #map { height: 340px; }
+            .model-highlight, .about-grid { grid-template-columns: 1fr; }
+            .top-actions { gap: 5px; }
+            .action-button { font-size: 10px; padding: 8px; }
+        }
+
+        @media (max-width:400px) {
+            .result-grid, .info-grid { grid-template-columns: 1fr; }
+            .prototype-label { font-size: 9px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+
+        <div class="brand">
+            <div class="brand-icon">🌽</div>
+            <div>
+                <div class="brand-name">MAIZE MLND SYSTEM</div>
+                <div class="brand-subtitle">Disease Incidence Prediction</div>
+            </div>
+        </div>
+
+        <nav class="nav-links">
+            <a href="#overview">Overview</a>
+            <a href="#prediction">Prediction</a>
+            <a href="#map-section">Field Map</a>
+            <a href="#analysis">County Analysis</a>
+            <a href="#models">Model Evaluation</a>
+        </nav>
+
+        <div class="top-actions">
+            <button type="button" class="action-button" id="presentationButton">
+                Presentation Mode
+            </button>
+            <button type="button" class="action-button" id="printButton">
+                Print / PDF
+            </button>
+        </div>
+
+        <div class="prototype-label">RESEARCH PROTOTYPE</div>
+
+    </div>
+</header>
+
+<main>
+
+    <section class="hero" id="overview">
+        <div class="hero-content">
+            <div class="eyebrow">Agricultural Decision Support</div>
+
+            <h1>Maize Crop Disease<br>Disease Incidence Prediction System</h1>
+
+            <p>
+                An interactive research prototype designed to estimate
+                measured Maize Lethal Necrosis Disease (MLND) incidence
+                using geographical information and field disease severity
+                records from selected counties in Kenya.
+            </p>
+
+            <div class="hero-tags">
+                <span class="hero-tag">Machine Learning</span>
+                <span class="hero-tag">Geographical Visualisation</span>
+                <span class="hero-tag">County Analysis</span>
+                <span class="hero-tag">MLND Research</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-heading">
+        <div>
+            <h2>System Overview</h2>
+            <p>Summary of the dataset and selected machine-learning model.</p>
+        </div>
+        <span class="section-number">01 / OVERVIEW</span>
+    </div>
+
+    <section class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Field Records</span>
+                <span class="stat-icon">📋</span>
+            </div>
+            <div class="stat-value">{{ info.records_used if info else 45 }}</div>
+            <div class="stat-foot">Records used for model training</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Counties Covered</span>
+                <span class="stat-icon">📍</span>
+            </div>
+            <div class="stat-value">{{ info.counties|length if info else 4 }}</div>
+            <div class="stat-foot">Counties represented in the dataset</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Cross-Validation</span>
+                <span class="stat-icon">🔬</span>
+            </div>
+            <div class="stat-value">{{ info.cv_folds if info else 5 }}-Fold</div>
+            <div class="stat-foot">Model evaluation procedure</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Selected Algorithm</span>
+                <span class="stat-icon">🤖</span>
+            </div>
+            <div class="stat-value" style="font-size:19px;">
+                {{ info.selected_model if info else 'Random Forest' }}
+            </div>
+            <div class="stat-foot">Selected using the lowest MAE</div>
+        </div>
+
+    </section>
+
+    <div class="section-heading" id="prediction">
+        <div>
+            <h2>Field Assessment and Prediction</h2>
+            <p>Enter field information to obtain an exploratory incidence estimate.</p>
+        </div>
+        <span class="section-number">02 / PREDICTION</span>
+    </div>
+
+    {% if error %}
+    <div class="error">
+        <strong>Input or prediction error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <section class="form-map-grid">
+
+        <div class="form-panel">
+            <h2>Enter Field Information</h2>
+            <p>
+                Provide the county, geographical coordinates and
+                mean disease severity recorded for the field.
+            </p>
+
+            <form method="POST" action="/">
+
+                <div class="field-group">
+                    <label for="county">County</label>
+                    <select id="county" name="county" required>
+                        <option value="">Select county</option>
+                        {% if info %}
+                            {% for county in info.counties %}
+                            <option value="{{ county }}"
+                                {% if request.form.get('county') == county %}selected{% endif %}>
+                                {{ county }}
+                            </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="latitude">GPS Latitude</label>
+                    <input id="latitude" name="latitude" type="number"
+                           step="any" placeholder="Example: -0.324292"
+                           value="{{ request.form.get('latitude', '') }}" required>
+                    <div class="field-hint">Valid geographical latitude: -90 to 90</div>
+                </div>
+
+                <div class="field-group">
+                    <label for="longitude">GPS Longitude</label>
+                    <input id="longitude" name="longitude" type="number"
+                           step="any" placeholder="Example: 35.975420"
+                           value="{{ request.form.get('longitude', '') }}" required>
+                    <div class="field-hint">Valid geographical longitude: -180 to 180</div>
+                </div>
+
+                <div class="field-group">
+                    <label for="severity">Mean Disease Severity</label>
+                    <input id="severity" name="severity" type="number"
+                           step="any"
+                           min="{{ info.severity_min if info else '' }}"
+                           max="{{ info.severity_max if info else '' }}"
+                           placeholder="Enter mean severity"
+                           value="{{ request.form.get('severity', '') }}" required>
+                    <div class="field-hint">
+                        Dataset range:
+                        {{ info.severity_min if info else '2.08' }}
+                        to
+                        {{ info.severity_max if info else '6.28' }}
+                    </div>
+                </div>
+
+                <button class="primary-button" type="submit">
+                    ⚡ Estimate Disease Incidence
+                </button>
+            </form>
+        </div>
+
+        <div class="map-panel" id="map-section">
+            <div class="panel-title">
+                <h2>Maize Field Location Map</h2>
+                <span class="tag">Interactive Map</span>
+            </div>
+
+            <p class="panel-description">
+                Explore the geographical distribution of the field records.
+                Click a location to automatically enter its coordinates
+                into the prediction form.
+            </p>
+
+            <div id="map"></div>
+
+            <div class="map-help">
+                <span>Click the map to select a field location.</span>
+                <button type="button" class="secondary-button" id="resetMap">
+                    Return to Kenya View
+                </button>
+            </div>
+
+            <div class="risk-key">
+                <span class="key-item">
+                    <span class="key-dot" style="background:#2e8b57;"></span>
+                    Lower recorded incidence
+                </span>
+                <span class="key-item">
+                    <span class="key-dot" style="background:#e6b84c;"></span>
+                    Medium recorded incidence
+                </span>
+                <span class="key-item">
+                    <span class="key-dot" style="background:#c0392b;"></span>
+                    Higher recorded incidence
+                </span>
+            </div>
+        </div>
+
+    </section>
+
+    {% if result %}
+    <div class="section-heading">
+        <div>
+            <h2>Prediction Output</h2>
+            <p>Estimated incidence and prototype risk interpretation.</p>
+        </div>
+        <span class="section-number">03 / RESULT</span>
+    </div>
+
+    <section class="result-panel">
+        <div class="result-top">
+            <h2>Estimation Result</h2>
+            <span class="tag">Model Output</span>
+        </div>
+
+        <div class="result-grid">
+            <div class="result-metric">
+                <div class="result-metric-label">Estimated Disease Incidence</div>
+                <div class="result-metric-value">{{ result.incidence }}%</div>
+            </div>
+
+            <div class="result-metric">
+                <div class="result-metric-label">Prototype Risk Category</div>
+                <div class="result-metric-value
+                    {% if result.risk == 'High' %}risk-high
+                    {% elif result.risk == 'Moderate' %}risk-moderate
+                    {% else %}risk-low{% endif %}">
+                    {{ result.risk }}
+                </div>
+            </div>
+        </div>
+
+        <div class="guidance">
+            <strong>Recommended Guidance</strong>
+            {{ result.advice }}
+        </div>
+
+        <p class="panel-description" style="margin:15px 0 0;">
+            This is an exploratory estimate from the trained model.
+            It is not a confirmed diagnosis or a prediction of a future outbreak.
+        </p>
+    </section>
+    {% endif %}
+
+    <div class="section-heading" id="analysis">
+        <div>
+            <h2>County Disease Incidence Analysis</h2>
+            <p>Comparison of the available field observations across the represented counties.</p>
+        </div>
+        <span class="section-number">04 / COUNTY ANALYSIS</span>
+    </div>
+
+    <section class="panel">
+        <div class="panel-title">
+            <h2>Average Recorded Incidence by County</h2>
+            <span class="tag">45 Field Records</span>
+        </div>
+
+        <p class="panel-description">
+            The table presents average recorded incidence and the number
+            of available field records in each county.
+        </p>
+
+        {% if stats_error %}
+            <div class="error">{{ stats_error }}</div>
+        {% elif county_stats %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>County</th>
+                            <th>Average Incidence</th>
+                            <th>Field Records</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in county_stats %}
+                        <tr>
+                            <td><strong>{{ item.county }}</strong></td>
+                            <td class="number-cell">{{ item.average_incidence }}%</td>
+                            <td>{{ item.records }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chart-panel" style="margin-top:20px;box-shadow:none;">
+                <h3>County Incidence Comparison</h3>
+                <p>Average recorded incidence percentage in each county.</p>
+                <div class="chart-container">
+                    <canvas id="countyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>Interpretation:</strong>
+                The highest average recorded incidence in the available
+                dataset is {{ county_stats[0].county }}
+                ({{ county_stats[0].average_incidence }}%).
+                These values describe the available field observations.
+                They are not verified county-wide disease prevalence figures.
+            </div>
+        {% else %}
+            <p>No county analysis data is available.</p>
+        {% endif %}
+    </section>
+
+    <div class="section-heading">
+        <div>
+            <h2>County Disease Risk Distribution</h2>
+            <p>Distribution of recorded observations across the prototype risk bands.</p>
+        </div>
+        <span class="section-number">05 / RISK DISTRIBUTION</span>
+    </div>
+
+    <section class="panel">
+        <div class="panel-title">
+            <h2>Recorded Risk Categories by County</h2>
+            <span class="tag">Provisional Categories</span>
+        </div>
+
+        <p class="panel-description">
+            Field records are grouped into Low, Moderate and High categories
+            using the prototype's incidence display bands.
+        </p>
+
+        {% if risk_stats_error %}
+            <div class="error">{{ risk_stats_error }}</div>
+        {% elif county_risk_stats %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>County</th>
+                            <th>Low</th>
+                            <th>Moderate</th>
+                            <th>High</th>
+                            <th>Total Records</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in county_risk_stats %}
+                        <tr>
+                            <td><strong>{{ item.county }}</strong></td>
+                            <td>{{ item.low }}</td>
+                            <td>{{ item.moderate }}</td>
+                            <td>{{ item.high }}</td>
+                            <td class="number-cell">{{ item.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chart-panel" style="margin-top:20px;box-shadow:none;">
+                <h3>Risk Distribution Comparison</h3>
+                <p>Number of recorded field observations in each category.</p>
+                <div class="chart-container">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="risk-key">
+                <span class="key-item">
+                    <span class="key-dot" style="background:#4c956c;"></span>
+                    Low: below 30%
+                </span>
+                <span class="key-item">
+                    <span class="key-dot" style="background:#e6b84c;"></span>
+                    Moderate: 30% to below 70%
+                </span>
+                <span class="key-item">
+                    <span class="key-dot" style="background:#c0392b;"></span>
+                    High: 70% or above
+                </span>
+            </div>
+
+            <div class="note">
+                These are provisional prototype display categories.
+                They are not officially validated MLND thresholds and
+                do not represent verified county-wide disease prevalence.
+            </div>
+        {% else %}
+            <p>No county risk distribution data is available.</p>
+        {% endif %}
+    </section>
+
+    {% if info %}
+    <div class="section-heading" id="models">
+        <div>
+            <h2>Machine-Learning Model Evaluation</h2>
+            <p>Comparison of the regression algorithms used in the prototype.</p>
+        </div>
+        <span class="section-number">06 / MODEL EVALUATION</span>
+    </div>
+
+    <section class="panel">
+        <div class="panel-title">
+            <h2>Model Information</h2>
+            <span class="tag">5-Fold Cross-Validation</span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span>Selected Model</span>
+                <strong>{{ info.selected_model }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Training Records</span>
+                <strong>{{ info.records_used }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Counties Represented</span>
+                <strong>{{ info.counties|join(", ") }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Evaluation Method</span>
+                <strong>{{ info.evaluation_method }}</strong>
+            </div>
+        </div>
+
+        {% for model in info.evaluation %}
+            {% if model.model == info.selected_model %}
+            <div class="selected-model">
+                SELECTED MODEL: {{ model.model }}
+            </div>
+
+            <div class="model-highlight">
+                <div class="model-metric">
+                    <span>Mean Absolute Error (MAE)</span>
+                    <strong>{{ model.mae }}</strong>
+                </div>
+                <div class="model-metric">
+                    <span>Root Mean Squared Error (RMSE)</span>
+                    <strong>{{ model.rmse }}</strong>
+                </div>
+                <div class="model-metric">
+                    <span>Coefficient of Determination (R²)</span>
+                    <strong>{{ model.r2 }}</strong>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <h3 style="font-size:15px;margin:25px 0 12px;">
+            Comparison of All Evaluated Algorithms
+        </h3>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>MAE</th>
+                        <th>RMSE</th>
+                        <th>R²</th>
+                        <th>Selection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for model in info.evaluation %}
+                    <tr>
+                        <td><strong>{{ model.model }}</strong></td>
+                        <td>{{ model.mae }}</td>
+                        <td>{{ model.rmse }}</td>
+                        <td>{{ model.r2 }}</td>
+                        <td>
+                            {% if model.model == info.selected_model %}
+                                <span class="tag">Selected</span>
+                            {% else %}
+                                <span style="color:#87938b;">Evaluated</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note">
+            <strong>Understanding the evaluation metrics:</strong><br>
+            MAE and RMSE measure prediction error; lower values indicate
+            smaller errors. R² describes how well the model explains
+            variation in the recorded incidence values. The selected model
+            is the algorithm with the lowest MAE in the cross-validation
+            evaluation.
+        </div>
+
+        <p class="panel-description" style="margin-top:16px;">
+            Evaluation folds: <strong>{{ info.cv_folds }}</strong>
+            &nbsp; | &nbsp;
+            Records evaluated: <strong>{{ info.evaluation_records }}</strong>
+        </p>
+
+        <div class="note">
+            <strong>Model limitation:</strong><br>
+            {{ info.note }}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="section-heading">
+        <div>
+            <h2>About the Research Prototype</h2>
+            <p>Key functions provided by the maize disease incidence system.</p>
+        </div>
+        <span class="section-number">07 / ABOUT</span>
+    </div>
+
+    <section class="panel">
+        <div class="about-grid">
+            <div class="about-item">
+                <div class="about-icon">🧠</div>
+                <h3>Machine-Learning Estimation</h3>
+                <p>
+                    Uses trained regression models to estimate measured
+                    disease incidence from the available field inputs.
+                </p>
+            </div>
+
+            <div class="about-item">
+                <div class="about-icon">🗺️</div>
+                <h3>Geographical Visualisation</h3>
+                <p>
+                    Displays field record locations on an interactive
+                    map of the study areas in Kenya.
+                </p>
+            </div>
+
+            <div class="about-item">
+                <div class="about-icon">📊</div>
+                <h3>County-Level Analysis</h3>
+                <p>
+                    Summarises recorded incidence and provisional
+                    risk-category distribution across the four counties.
+                </p>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>Important system limitation:</strong><br>
+            This prototype estimates measured MLND incidence using the
+            available 45 field records. It does not forecast future
+            outbreaks. The Low, Moderate and High categories are
+            provisional display bands, not officially validated MLND
+            thresholds. The estimate does not replace field inspection,
+            laboratory diagnosis or advice from an agricultural
+            extension officer.
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <strong>Maize Crop Disease Outbreak Prediction Project</strong><br>
+    Machine-Learning Research Prototype | Kenya<br>
+    Supporting field assessment through data analysis and visualisation.
+</footer>
+
+<button type="button" class="back-to-top" id="backToTop" title="Back to top">
+    ↑
+</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // INITIALISE THE KENYA FIELD MAP
+    const map = L.map('map').setView([-0.5, 37.5], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // PRESENTATION MODE
+    const presentationButton = document.getElementById('presentationButton');
+
+    function togglePresentationMode() {
+        document.body.classList.toggle('presentation-mode');
+
+        const enabled = document.body.classList.contains('presentation-mode');
+
+        presentationButton.textContent = enabled
+            ? 'Exit Presentation'
+            : 'Presentation Mode';
+
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 300);
+    }
+
+    presentationButton.addEventListener('click', togglePresentationMode);
+
+    // PRESS ESCAPE TO EXIT PRESENTATION MODE
+    document.addEventListener('keydown', function (event) {
+        if (
+            event.key === 'Escape' &&
+            document.body.classList.contains('presentation-mode')
+        ) {
+            togglePresentationMode();
+        }
+    });
+
+    // PRINT OR SAVE AS PDF
+    document.getElementById('printButton').addEventListener('click', function () {
+        window.print();
+    });
+
+    // BACK TO TOP
+    const backToTop = document.getElementById('backToTop');
+
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 450) {
+            backToTop.classList.add('visible');
+        } else {
+            backToTop.classList.remove('visible');
+        }
+    });
+
+    backToTop.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // AVAILABLE FIELD RECORDS
+    const fieldRecords = [
+        ['Bomet', -0.845629, 35.376631, 6.08, 100],
+        ['Bomet', -0.853013, 35.389639, 3.92, 92],
+        ['Bomet', -0.886515, 35.173078, 4.24, 100],
+        ['Bomet', -0.845440, 35.376609, 6.16, 100],
+        ['Bomet', -0.853152, 35.389623, 4.24, 92],
+        ['Bomet', -0.778160, 35.336049, 5.03, 92],
+        ['Bomet', -0.864572, 35.392606, 4.85, 92],
+
+        ['Kirinyaga', -0.658160, 37.383106, 5.8889, 100],
+        ['Kirinyaga', -0.657882, 37.383288, 5.3333, 100],
+        ['Kirinyaga', -0.658418, 37.383439, 4.4444, 100],
+        ['Kirinyaga', -0.648508, 37.363321, 3.3333, 100],
+        ['Kirinyaga', -0.637307, 37.363688, 3.4444, 78],
+        ['Kirinyaga', -0.632195, 37.369946, 4.1111, 67],
+        ['Kirinyaga', -0.621949, 37.353760, 4.3333, 100],
+        ['Kirinyaga', -0.699602, 37.373968, 5.00, 68],
+        ['Kirinyaga', -0.684203, 37.357968, 4.00, 65],
+
+        ['Narok', -0.881370, 37.654218, 5.08, 100],
+        ['Narok', -0.851623, 35.666987, 5.52, 96],
+        ['Narok', -0.851848, 35.666977, 5.52, 96],
+        ['Narok', -0.869456, 35.663748, 4.60, 96],
+        ['Narok', -1.056141, 35.739885, 3.60, 84],
+        ['Narok', -0.877083, 35.662532, 3.48, 88],
+        ['Narok', -0.877630, 35.662875, 3.12, 80],
+
+        ['Nakuru', -0.324292, 35.975420, 4.24, 92],
+        ['Nakuru', -0.279954, 36.030549, 3.12, 80],
+        ['Nakuru', -0.340755, 36.166506, 2.72, 64],
+        ['Nakuru', -0.351541, 36.185575, 3.76, 100],
+        ['Nakuru', -0.352582, 36.184845, 3.00, 80],
+        ['Nakuru', -0.497572, 36.311948, 5.40, 100],
+        ['Nakuru', -0.501929, 36.316685, 6.28, 100],
+        ['Nakuru', -0.502305, 36.315265, 4.80, 100],
+        ['Nakuru', -0.759995, 36.481763, 2.08, 8],
+        ['Nakuru', -0.770955, 36.501581, 3.92, 100],
+        ['Nakuru', -0.322762, 36.151052, 4.60, 100],
+        ['Nakuru', -0.337431, 35.944768, 3.56, 100],
+        ['Nakuru', -0.338839, 35.946760, 4.28, 88],
+        ['Nakuru', -0.339277, 35.948538, 2.68, 68],
+        ['Nakuru', -0.342738, 35.950161, 4.80, 96],
+        ['Nakuru', -0.342112, 35.950562, 5.76, 100],
+        ['Nakuru', -0.340919, 35.950690, 4.20, 92],
+        ['Nakuru', -0.339748, 35.951508, 4.16, 100],
+        ['Nakuru', -0.334399, 35.948759, 4.12, 100],
+        ['Nakuru', -0.232100, 35.535100, 3.00, 30],
+        ['Nakuru', -0.303048, 36.026107, 3.00, 25],
+        ['Nakuru', -0.335207, 35.990468, 3.00, 30]
+    ];
+
+    // COLOUR FIELD RECORDS BY INCIDENCE
+    function incidenceColour(value) {
+        if (value <= 50) {
+            return blendColours('#2e8b57', '#e6b84c', value / 50);
+        }
+
+        return blendColours('#e6b84c', '#c0392b', (value - 50) / 50);
+    }
+
+    function blendColours(start, end, ratio) {
+        const a = start.match(/[A-Fa-f0-9]{2}/g).map(x => parseInt(x, 16));
+        const b = end.match(/[A-Fa-f0-9]{2}/g).map(x => parseInt(x, 16));
+
+        const result = a.map((v, i) =>
+            Math.round(v + (b[i] - v) * ratio)
+        );
+
+        return '#' + result.map(v =>
+            v.toString(16).padStart(2, '0')
+        ).join('');
+    }
+
+    // DISPLAY THE FIELD RECORDS
+    const distributionLayer = L.layerGroup().addTo(map);
+
+    fieldRecords.forEach(record => {
+        const [county, lat, lng, severity, incidence] = record;
+
+        L.circleMarker([lat, lng], {
+            radius: 7,
+            color: '#ffffff',
+            weight: 1.5,
+            fillColor: incidenceColour(incidence),
+            fillOpacity: 0.9
+        })
+        .bindPopup(
+            '<strong>County:</strong> ' + county +
+            '<br><strong>Latitude:</strong> ' + lat +
+            '<br><strong>Longitude:</strong> ' + lng +
+            '<br><strong>Mean severity:</strong> ' + severity +
+            '<br><strong>Recorded incidence:</strong> ' + incidence + '%'
+        )
+        .addTo(distributionLayer);
+    });
+
+    // MAP LEGEND
+    const legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function () {
+        const div = L.DomUtil.create('div');
+
+        div.style.background = 'white';
+        div.style.padding = '12px';
+        div.style.borderRadius = '9px';
+        div.style.boxShadow = '0 2px 10px #00000020';
+        div.style.fontSize = '11px';
+        div.style.lineHeight = '1.7';
+
+        div.innerHTML =
+            '<strong>Recorded incidence (%)</strong>' +
+            '<div style="width:145px;height:11px;margin:8px 0;' +
+            'border-radius:5px;background:linear-gradient(to right,#2e8b57,#e6b84c,#c0392b);"></div>' +
+            '<div style="display:flex;justify-content:space-between;">' +
+            '<span>0%</span><span>50%</span><span>100%</span></div>';
+
+        return div;
+    };
+
+    legend.addTo(map);
+
+    // SELECTED FIELD LOCATION
+    let fieldMarker = null;
+
+    const latitudeInput = document.getElementById('latitude');
+    const longitudeInput = document.getElementById('longitude');
+
+    function updateMapFromInputs() {
+        const latitude = parseFloat(latitudeInput.value);
+        const longitude = parseFloat(longitudeInput.value);
+
+        if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 || latitude > 90 ||
+            longitude < -180 || longitude > 180
+        ) {
+            return;
+        }
+
+        const location = [latitude, longitude];
+
+        if (fieldMarker) {
+            fieldMarker.setLatLng(location);
+        } else {
+            fieldMarker = L.marker(location).addTo(map);
+        }
+
+        fieldMarker.bindPopup(
+            '<strong>Selected Maize Field</strong>' +
+            '<br>Latitude: ' + latitude +
+            '<br>Longitude: ' + longitude
+        );
+
+        map.setView(location, 13);
+    }
+
+    latitudeInput.addEventListener('input', updateMapFromInputs);
+    longitudeInput.addEventListener('input', updateMapFromInputs);
+
+    // CLICK MAP TO SELECT A FIELD
+    map.on('click', function (event) {
+        latitudeInput.value = event.latlng.lat.toFixed(6);
+        longitudeInput.value = event.latlng.lng.toFixed(6);
+
+        updateMapFromInputs();
+
+        if (fieldMarker) {
+            fieldMarker.openPopup();
+        }
+    });
+
+    // RETURN TO KENYA VIEW
+    document.getElementById('resetMap').addEventListener('click', function () {
+        map.setView([-0.5, 37.5], 6);
+    });
+
+    updateMapFromInputs();
+
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 300);
+
+    // COUNTY INCIDENCE CHART
+    {% if county_stats %}
+
+    const countyNames = {{ county_stats | map(attribute='county') | list | tojson }};
+    const countyIncidence = {{ county_stats | map(attribute='average_incidence') | list | tojson }};
+    const chartCanvas = document.getElementById('countyChart');
+
+    if (chartCanvas && typeof Chart !== 'undefined') {
+        new Chart(chartCanvas, {
+            type: 'bar',
+            data: {
+                labels: countyNames,
+                datasets: [{
+                    label: 'Average recorded incidence (%)',
+                    data: countyIncidence,
+                    backgroundColor: ['#174d32','#32734c','#75a987','#e6b94f'],
+                    borderRadius: 7,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#edf1ed' },
+                        title: {
+                            display: true,
+                            text: 'Average incidence (%)'
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        title: {
+                            display: true,
+                            text: 'County'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    {% endif %}
+
+    // COUNTY RISK DISTRIBUTION CHART
+    {% if county_risk_stats %}
+
+    const riskCountyNames = {{ county_risk_stats | map(attribute='county') | list | tojson }};
+    const lowRiskCounts = {{ county_risk_stats | map(attribute='low') | list | tojson }};
+    const moderateRiskCounts = {{ county_risk_stats | map(attribute='moderate') | list | tojson }};
+    const highRiskCounts = {{ county_risk_stats | map(attribute='high') | list | tojson }};
+    const riskCanvas = document.getElementById('riskDistributionChart');
+
+    if (riskCanvas && typeof Chart !== 'undefined') {
+        new Chart(riskCanvas, {
+            type: 'bar',
+            data: {
+                labels: riskCountyNames,
+                datasets: [
+                    {
+                        label: 'Low',
+                        data: lowRiskCounts,
+                        backgroundColor: '#4c956c',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Moderate',
+                        data: moderateRiskCounts,
+                        backgroundColor: '#e6b84c',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'High',
+                        data: highRiskCounts,
+                        backgroundColor: '#c0392b',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        title: {
+                            display: true,
+                            text: 'County'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                        grid: { color: '#edf1ed' },
+                        title: {
+                            display: true,
+                            text: 'Number of field records'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    {% endif %}
+</script>
+
+</body>
+</html>

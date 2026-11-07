@@ -1,0 +1,39 @@
+{
+    "selected_model": "Random Forest Regressor",
+    "records_used": 45,
+    "counties": [
+        "Bomet",
+        "Kirinyaga",
+        "Nakuru",
+        "Narok"
+    ],
+    "severity_min": 2.08,
+    "severity_max": 6.28,
+    "incidence_min": 8.0,
+    "incidence_max": 100.0,
+    "evaluation_method": "5-Fold Cross-Validation",
+    "cv_folds": 5,
+    "evaluation_records": 45,
+    "evaluation": [
+        {
+            "model": "Linear Regression",
+            "mae": 17.715,
+            "rmse": 24.158,
+            "r2": -0.167
+        },
+        {
+            "model": "Decision Tree Regressor",
+            "mae": 10.36,
+            "rmse": 16.995,
+            "r2": 0.423
+        },
+        {
+            "model": "Random Forest Regressor",
+            "mae": 9.514,
+            "rmse": 14.264,
+            "r2": 0.593
+        }
+    ],
+    "target": "incidence",
+    "note": "Exploratory estimate of measured MLND incidence, not a forecast of future outbreaks. The dataset contains only 45 field records from four counties. Cross-validation results are preliminary and may not represent performance in other locations."
+}
